@@ -299,9 +299,8 @@
         </div>
         <div class="fis-row" id="fis-row-license-ligue" style="display:none;">
           <div class="fis-field" data-field="licence" id="fis-field-licence">
-            <label for="fis-licence">Numéro de licence</label>
+            <label for="fis-licence">Numéro de licence <span class="opt">(facultatif)</span></label>
             <input type="text" id="fis-licence" />
-            <p class="fis-error">Indiquez votre numéro de licence.</p>
           </div>
           <div class="fis-field" data-field="ligue" id="fis-field-ligue">
             <label for="fis-ligue">Ligue de compétition</label>
@@ -813,7 +812,6 @@
     if (currentTournament.ask_ville && !ville) { setError('ville'); valid = false; }
     if (!tel) { setError('tel'); valid = false; }
     if (!club) { setError('club'); valid = false; }
-    if (currentTournament.ask_license && !licence) { setError('licence'); valid = false; }
     if (currentTournament.ask_ligue && !ligue) { setError('ligue'); valid = false; }
     if (categories.length === 0) { setError('categorie'); valid = false; }
     if (!engage) { setError('engage'); valid = false; }
