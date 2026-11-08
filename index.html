@@ -145,16 +145,6 @@
   .fis-radio-row label:has(input:checked) { border-color: var(--navy); background: var(--cream); font-weight: 600; }
   #fis-followup-detail { margin-top: 14px; display: none; }
   .fis-error { color: var(--error); font-size: 12.5px; margin-top: 6px; display: none; }
-  /* Recherche dans la liste des licenciés (tournoi.topscore.ci) */
-  .fis-search-results { margin-top: 6px; border: 1px solid #E2DBC7; border-radius: 10px; overflow: hidden; background: #fff; }
-  .fis-search-results:empty { display: none; }
-  .fis-search-results button { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-bottom: 1px solid #EFE9D9; background: #fff; font: inherit; font-size: 14px; color: var(--navy); cursor: pointer; }
-  .fis-search-results button:last-child { border-bottom: 0; }
-  .fis-search-results button:hover { background: var(--gold-soft); }
-  .fis-search-results .club { color: var(--muted); font-size: 12.5px; margin-left: 6px; }
-  .fis-search-results .none { color: var(--gold); font-weight: 600; }
-  .fis-search-picked { margin-top: 8px; font-size: 13.5px; color: #2E7D4F; display: none; }
-  .fis-search-picked a { color: var(--gold); margin-left: 8px; cursor: pointer; text-decoration: underline; }
   .fis-field.has-error input, .fis-field.has-error textarea, .fis-field.has-error select { border-color: var(--error); }
   .fis-field.has-error .fis-error { display: block; }
   .fis-engage {
@@ -260,12 +250,6 @@
     <form id="fis-form" novalidate>
       <div class="fis-section">
         <p class="fis-section-title"><span class="fis-num">1</span>Identité</p>
-        <div class="fis-field" id="fis-field-search" style="display:none;">
-          <label for="fis-search">Retrouvez-vous dans la liste des licenciés <span class="opt">(facultatif)</span></label>
-          <input type="text" id="fis-search" autocomplete="off" placeholder="Tapez votre nom, ex. : Yao Koffi" />
-          <div id="fis-search-results" class="fis-search-results"></div>
-          <p id="fis-search-picked" class="fis-search-picked"></p>
-        </div>
         <div class="fis-row">
           <div class="fis-field" data-field="nom">
             <label for="fis-nom">Nom</label>
@@ -454,79 +438,6 @@
   const headerDates = document.getElementById('fis-header-dates');
 
   let currentTournament = null;
-
-  // === Recherche dans la liste des licenciés (plateforme tournoi.topscore.ci) ===
-  // Le joueur tape son nom (mots dans n'importe quel ordre) et se choisit : nom,
-  // prénom et club se remplissent, et sa référence part avec l'inscription
-  // (colonne « Réf. joueur » de l'export, reprise à l'import sur la plateforme).
-  // Il n'a pas besoin de connaître son numéro de licence.
-  const LICENCIES_API = 'https://tournoi.topscore.ci/api/public/licencies';
-  const searchInput = document.getElementById('fis-search');
-  const searchResults = document.getElementById('fis-search-results');
-  const searchPicked = document.getElementById('fis-search-picked');
-  let pickedRef = null;
-  let searchTimer = null;
-  let searchSeq = 0;
-
-  function resetLicenceSearch() {
-    pickedRef = null;
-    searchInput.value = '';
-    searchResults.innerHTML = '';
-    searchPicked.style.display = 'none';
-    searchPicked.textContent = '';
-  }
-
-  function pickLicencie(p) {
-    pickedRef = p.ref;
-    document.getElementById('fis-nom').value = p.lastName || '';
-    document.getElementById('fis-prenom').value = p.firstName || '';
-    if (p.club) document.getElementById('fis-club').value = p.club;
-    searchResults.innerHTML = '';
-    searchInput.value = '';
-    searchPicked.innerHTML = '✓ ' + escapeHtml((p.lastName || '') + ' ' + (p.firstName || '')) +
-      (p.club ? ' · ' + escapeHtml(p.club) : '') + '<a id="fis-search-change">Ce n’est pas moi</a>';
-    searchPicked.style.display = 'block';
-    document.getElementById('fis-search-change').addEventListener('click', function() {
-      resetLicenceSearch();
-      searchInput.focus();
-    });
-  }
-
-  searchInput.addEventListener('input', function() {
-    clearTimeout(searchTimer);
-    const q = searchInput.value.trim();
-    if (q.replace(/\s/g, '').length < 3) { searchResults.innerHTML = ''; return; }
-    searchTimer = setTimeout(async function() {
-      const seq = ++searchSeq;
-      try {
-        // licenciés de Côte d'Ivoire en premier
-        const res = await fetch(LICENCIES_API + '?fed=CI&q=' + encodeURIComponent(q));
-        if (!res.ok) throw new Error(String(res.status));
-        const data = await res.json();
-        if (seq !== searchSeq) return;
-        const list = (data && data.players) || [];
-        searchResults.innerHTML = '';
-        list.forEach(function(p) {
-          const b = document.createElement('button');
-          b.type = 'button';
-          // club, et pays pour un licencié d'une autre fédération
-          const extra = [p.club, p.federation && p.federation !== 'CI' ? p.federation : null].filter(Boolean).join(' · ');
-          b.innerHTML = escapeHtml((p.lastName || '') + ' ' + (p.firstName || '')) +
-            (extra ? '<span class="club">' + escapeHtml(extra) + '</span>' : '');
-          b.addEventListener('click', function() { pickLicencie(p); });
-          searchResults.appendChild(b);
-        });
-        const none = document.createElement('button');
-        none.type = 'button';
-        none.innerHTML = '<span class="none">' + (list.length ? 'Je ne suis pas dans la liste' : 'Aucun licencié trouvé : remplissez le formulaire ci-dessous') + '</span>';
-        none.addEventListener('click', function() { searchResults.innerHTML = ''; document.getElementById('fis-nom').focus(); });
-        searchResults.appendChild(none);
-      } catch (e) {
-        // liste indisponible : le joueur remplit le formulaire comme d'habitude
-        searchResults.innerHTML = '';
-      }
-    }, 300);
-  });
   let previousViewEl = landingView;
 
   function escapeHtml(str) {
@@ -626,9 +537,6 @@
       document.getElementById('fis-row-birthville').style.display = (data.ask_birthdate || data.ask_ville) ? 'grid' : 'none';
       document.getElementById('fis-row-license-ligue').style.display = (data.ask_license || data.ask_ligue) ? 'grid' : 'none';
       document.getElementById('fis-field-licence').style.display = data.ask_license ? 'block' : 'none';
-      // recherche des licenciés : pour les tournois (ceux qui demandent la licence)
-      document.getElementById('fis-field-search').style.display = data.ask_license ? 'block' : 'none';
-      resetLicenceSearch();
       document.getElementById('fis-field-ligue').style.display = data.ask_ligue ? 'block' : 'none';
 
       await checkRegistrationWindow(data);
@@ -850,7 +758,6 @@
         'Catégorie': (e.categories || []).join(', '),
         'Réponse': e.followup_answer === 'oui' ? 'Oui' : (e.followup_answer === 'non' ? 'Non' : ''),
         'Précisions': e.followup_detail || '',
-        'Réf. joueur': e.player_ref || '',
         'Soumis le': e.created_at ? new Date(e.created_at).toLocaleString('fr-FR') : ''
       };
     });
@@ -932,13 +839,7 @@
     };
 
     try {
-      if (pickedRef && currentTournament.ask_license) entry.player_ref = pickedRef;
-      let { error } = await supabaseClient.from('fis_registrations').insert(entry);
-      // colonne player_ref pas encore créée dans Supabase : inscription enregistrée sans elle
-      if (error && entry.player_ref && /player_ref/.test(error.message || '')) {
-        delete entry.player_ref;
-        ({ error } = await supabaseClient.from('fis_registrations').insert(entry));
-      }
+      const { error } = await supabaseClient.from('fis_registrations').insert(entry);
       if (error) throw error;
       hideAllMainViews();
       confirmView.style.display = 'block';
