@@ -499,7 +499,8 @@
     searchTimer = setTimeout(async function() {
       const seq = ++searchSeq;
       try {
-        const res = await fetch(LICENCIES_API + '?q=' + encodeURIComponent(q));
+        // licenciés de Côte d'Ivoire en premier
+        const res = await fetch(LICENCIES_API + '?fed=CI&q=' + encodeURIComponent(q));
         if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         if (seq !== searchSeq) return;
@@ -508,8 +509,10 @@
         list.forEach(function(p) {
           const b = document.createElement('button');
           b.type = 'button';
+          // club, et pays pour un licencié d'une autre fédération
+          const extra = [p.club, p.federation && p.federation !== 'CI' ? p.federation : null].filter(Boolean).join(' · ');
           b.innerHTML = escapeHtml((p.lastName || '') + ' ' + (p.firstName || '')) +
-            (p.club ? '<span class="club">' + escapeHtml(p.club) + '</span>' : '');
+            (extra ? '<span class="club">' + escapeHtml(extra) + '</span>' : '');
           b.addEventListener('click', function() { pickLicencie(p); });
           searchResults.appendChild(b);
         });
