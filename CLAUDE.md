@@ -28,6 +28,8 @@ Tout le JS est dans une IIFE en bas de `index.html`.
 - **Envoi** : `insert` dans `fis_registrations` (`tournament_slug`, `nom`, `prenom`, `ville`, `telephone`, `email`, `club`, `date_naissance`, `numero_licence`, `ligue`, `categories`, `followup_answer`, `followup_detail`). Une erreur `42501` signifie que la RLS a refusé l'insertion parce que le tournoi est hors période.
 - **Administration** : bouton « Voir les inscriptions enregistrées » → connexion Supabase Auth (e-mail + mot de passe) → tableau filtrable par tournoi et export `.xlsx`. Ont accès : Ahissé, le DTN et le chargé de communication de la FIS.
 
+- **Recherche des licenciés** (tournois qui demandent la licence) : champ « Retrouvez-vous dans la liste des licenciés » en haut du formulaire. Il interroge `https://tournoi.topscore.ci/api/public/licencies?q=…` (3 lettres au moins, mots dans n'importe quel ordre) ; choisir son nom remplit nom, prénom et club, et la référence du joueur part dans la colonne `player_ref` (export : « Réf. joueur »), utilisée en priorité par l'import des inscrits sur la plateforme. Facultatif : « Je ne suis pas dans la liste » laisse remplir le formulaire comme avant. Si la colonne `player_ref` n'existe pas encore, l'inscription est enregistrée sans elle.
+
 ### Règles du formulaire (décidées, à conserver)
 
 - Obligatoires : nom, prénom, téléphone, club, au moins une catégorie, case d'engagement ; ville et ligue si le tournoi les demande.
